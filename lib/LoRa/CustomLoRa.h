@@ -23,6 +23,7 @@ public:
     void read_Lora();
     bool checkId(String data, String targetID);
 };
+extern      bool checkData;
 extern      int chipId;
 extern      float temp, humi, light, soil, pin, Rssi;
 extern CustomLoRa customLoRa;

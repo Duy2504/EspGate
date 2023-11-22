@@ -13,7 +13,7 @@
 #include <CustomEEPROM.h>
 #include <WifiConfig.h>
 #include <CustomLoRa.h>
-const char *mqtt_server = "192.168.1.24";
+const char *mqtt_server = "192.168.1.19";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -22,34 +22,53 @@ PubSubClient client(espClient);
 xTaskHandle handler_Publish;
 xTaskHandle handler_Sub;
 xTaskHandle handler_readLora;
-bool checkData = false;
-#define sub1 "light_change"
-#define sub2 "pump_change"
-#define sub3 "rem_change"
+//========== TOPIC Control ==========//
+#define sub1 "light_state"
+#define sub2 "pump_state"
+#define sub3 "rem_state"
 
-void Task1(void *parameters)
+void MQTT(void *parameters)
 {
   while (true)
   {
-    customLoRa.read_Lora();
-    DynamicJsonDocument jsonDoc(128);
-    jsonDoc["deviceId"] = chipId;
-    jsonDoc["temperature"] = temp;
-    jsonDoc["humidity"] = humi;
-    jsonDoc["light"] = light;
-    jsonDoc["soil"] = soil;
-    jsonDoc["Rssi"] = Rssi;
-    jsonDoc["Pin"] = pin;
-    Serial.println();
-    String jsonString;
-    serializeJson(jsonDoc, jsonString);
-    client.publish("sensor", jsonString.c_str());
-    Serial.println(jsonString);
+    while (!client.connected())
+    {
+      Serial.println("Attempting MQTT connection...");
+      String clientId = "ESP32Client-";
+      clientId += String(random(0xffff), HEX);
+
+      if (client.connect(clientId.c_str()))
+      {
+        Serial.println("MQTT connected!");
+        client.subscribe(sub1);
+        client.subscribe(sub2);
+      }
+      else
+      {
+        Serial.println(" try again in 2 seconds");
+        Serial.println(mqtt_server);
+        delay(2000);
+      }
+    }
+    client.loop();
   }
 }
-int idRelay;
-int stateRelay;
-
+void Pub()
+{
+  DynamicJsonDocument jsonDoc(128);
+  jsonDoc["deviceId"] = chipId;
+  jsonDoc["temperature"] = temp;
+  jsonDoc["humidity"] = humi;
+  jsonDoc["light"] = light;
+  jsonDoc["soil"] = soil;
+  jsonDoc["Rssi"] = Rssi;
+  jsonDoc["Pin"] = pin;
+  Serial.println("OK đã đóng gói");
+  String jsonString;
+  serializeJson(jsonDoc, jsonString);
+  client.publish("sensor", jsonString.c_str());
+  Serial.println(jsonString);
+}
 void callback(char *topic, byte *payload, unsigned int length)
 {
   Serial.print("Message arrived [");
@@ -62,15 +81,15 @@ void callback(char *topic, byte *payload, unsigned int length)
       Serial.print((char)payload[i]);
     }
     Serial.println();
-    // gửi cả payload cho relay
-    if ((char)payload[0] == '1')
-    {
-      Serial.println("on");
-    }
-    else
-    {
-      Serial.println("off");
-    }
+    // // gửi cả payload cho relay
+    // if ((char)payload[0] == '1')
+    // {
+    //   Serial.println("on");
+    // }
+    // else
+    // {
+    //   Serial.println("off");
+    // }
   }
   else if (strstr(topic, sub2))
   {
@@ -89,27 +108,27 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
   }
 }
-void reconnect()
+void Task1(void *parameters)
 {
-  while (!client.connected())
+  while (true)
   {
-    Serial.println("Attempting MQTT connection...");
-    String clientId = "ESP32Client-";
-    clientId += String(random(0xffff), HEX);
-
-    if (client.connect(clientId.c_str()))
+    customLoRa.read_Lora();
+    if (checkData)
     {
-      Serial.println("MQTT connected!");
-      client.subscribe(sub1);
-      client.subscribe(sub2);
-    }
-    else
-    {
-      Serial.println(" try again in 2 seconds");
-      delay(2000);
+      Pub();
+      checkData = false;
     }
   }
 }
+// void Sub(void *parameters){
+// while (true)
+// {
+//   callback();
+// }
+
+// }
+
+
 
 void setup()
 {
@@ -119,13 +138,9 @@ void setup()
   customLoRa.setup_Lora();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-  xTaskCreatePinnedToCore(Task1, "task1", 20000, NULL, 1, &handler_readLora, 1);
+  xTaskCreatePinnedToCore(MQTT, "MQTT", 20000, NULL, 2, NULL, 1);
+  xTaskCreatePinnedToCore(Task1, "task1", 20000, NULL, 2, &handler_readLora, 1);
 }
 void loop()
 {
-  if (!client.connected())
-  {
-    reconnect();
-  }
-  client.loop();
 }

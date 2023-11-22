@@ -19,6 +19,7 @@ void CustomLoRa::setup_Lora()
     Serial.println(LORA_FREQUENCY);
   }
 }
+bool checkData;
 int chipId;
 float temp, humi, light, soil, pin, Rssi;
 void CustomLoRa::tach_String(String data)
@@ -42,21 +43,21 @@ void CustomLoRa::tach_String(String data)
   humi = humiS.toFloat();
   light = lightS.toFloat();
   pin = pinS.toFloat();
-
-  Serial.print("Id: ");
-  Serial.println(chipId);
-  Serial.print("Nhiệt độ: ");
-  Serial.println(temp);
-  Serial.print("Độ ẩm: ");
-  Serial.println(humi);
-  Serial.print("Ánh sáng: ");
-  Serial.println(light);
-  Serial.print("Độ ẩm đất: ");
-  Serial.println(soil);
-  Serial.print("Pin: ");
-  Serial.println(30);
-  Serial.print("Rssi: ");
-  Serial.println(Rssi);
+  
+  // Serial.print("Id: ");
+  // Serial.println(chipId);
+  // Serial.print("Nhiệt độ: ");
+  // Serial.println(temp);
+  // Serial.print("Độ ẩm: ");
+  // Serial.println(humi);
+  // Serial.print("Ánh sáng: ");
+  // Serial.println(light);
+  // Serial.print("Độ ẩm đất: ");
+  // Serial.println(soil);
+  // Serial.print("Pin: ");
+  // Serial.println(30);
+  // Serial.print("Rssi: ");
+  // Serial.println(Rssi);
 }
 bool CustomLoRa::checkId(String data, String targetID)
 {
@@ -91,7 +92,13 @@ void CustomLoRa::read_Lora()
     if (checkId(data, "4402492"))
     {
       tach_String(data);
+      checkData = true;
     }
+    else
+    {
+      checkData = false;
+    }
+    
     // tach_String(data);
     // xTaskCreatePinnedToCore(publishData, "publishData", 2048, NULL, 4, &handler_Publish, 1);
   }
