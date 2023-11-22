@@ -27,6 +27,7 @@ xTaskHandle handler_readLora;
 #define sub2 "pump_state"
 #define sub3 "rem_state"
 
+
 void MQTT(void *parameters)
 {
   while (true)
@@ -42,6 +43,7 @@ void MQTT(void *parameters)
         Serial.println("MQTT connected!");
         client.subscribe(sub1);
         client.subscribe(sub2);
+        client.subscribe(sub3);
       }
       else
       {
@@ -63,14 +65,15 @@ void Pub()
   jsonDoc["soil"] = soil;
   jsonDoc["Rssi"] = Rssi;
   jsonDoc["Pin"] = pin;
-  Serial.println("OK đã đóng gói");
+  // Serial.println("OK đã đóng gói");
   String jsonString;
   serializeJson(jsonDoc, jsonString);
   client.publish("sensor", jsonString.c_str());
-  Serial.println(jsonString);
+  // Serial.println(jsonString);
 }
 void callback(char *topic, byte *payload, unsigned int length)
 {
+  String subData = "";
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
@@ -78,34 +81,25 @@ void callback(char *topic, byte *payload, unsigned int length)
   {
     for (int i = 0; i < length; i++)
     {
-      Serial.print((char)payload[i]);
+      subData += (char)payload[i];
     }
-    Serial.println();
-    // // gửi cả payload cho relay
-    // if ((char)payload[0] == '1')
-    // {
-    //   Serial.println("on");
-    // }
-    // else
-    // {
-    //   Serial.println("off");
-    // }
+    Serial.println(subData);
   }
   else if (strstr(topic, sub2))
   {
     for (int i = 0; i < length; i++)
     {
-      Serial.print((char)payload[i]);
+      subData += (char)payload[i];
     }
-    Serial.println();
-    if ((char)payload[0] == '1')
+    Serial.println(subData);
+  }
+  else if (strstr(topic, sub3))
+  {
+    for (int i = 0; i < length; i++)
     {
-      Serial.println("on");
+      subData += (char)payload[i];
     }
-    else
-    {
-      Serial.println("off");
-    }
+    Serial.println(subData);
   }
 }
 void Task1(void *parameters)
@@ -127,8 +121,6 @@ void Task1(void *parameters)
 // }
 
 // }
-
-
 
 void setup()
 {

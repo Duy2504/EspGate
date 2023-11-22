@@ -83,10 +83,10 @@ void CustomLoRa::read_Lora()
     {
       data += (char)LoRa.read();
     }
-    Serial.print("Data Receive: ");
-    Serial.print(data);
-    Serial.print(" with: ");
-    Serial.println(LoRa.packetRssi());
+    // Serial.print("Data Receive: ");
+    // Serial.print(data);
+    // Serial.print(" with: ");
+    // Serial.println(LoRa.packetRssi());
     Rssi = LoRa.packetRssi();
     // Tách dữ liệu chỉ khi ID là 4402492
     if (checkId(data, "4402492"))
