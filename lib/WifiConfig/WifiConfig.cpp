@@ -1,6 +1,6 @@
 #include <WifiConfig.h>
 
-const char *WifiConfig::mqtt_server = "192.168.1.24";
+const char *WifiConfig::mqtt_server = "192.168.137.1";
 
 WifiConfig::WifiConfig()
 {

@@ -23,46 +23,32 @@ xTaskHandle handler_Publish;
 xTaskHandle handler_Sub;
 xTaskHandle handler_readLora;
 bool checkData = false;
-#define sub1 "led1"
-#define sub2 "led2"
-void pubData(void *parameters)
-{
-  while (true)
-  {
-    if (checkData)
-    {
-      DynamicJsonDocument jsonDoc(128);
-      jsonDoc["deviceId"] = chipId;
-      jsonDoc["temperature"] = temp;
-      jsonDoc["humidity"] = humi;
-      jsonDoc["light"] = light;
-      jsonDoc["soil"] = soil;
-      jsonDoc["Rssi"] = Rssi;
-      jsonDoc["Pin"] = pin;
-      Serial.println();
-      String jsonString;
-      serializeJson(jsonDoc, jsonString);
-      client.publish("sensor", jsonString.c_str());
-      Serial.println(jsonString);
-      checkData = false;
-    }
-    // vTaskDelete(NULL);
-  }
-}
+#define sub1 "light_change"
+#define sub2 "pump_change"
+#define sub3 "rem_change"
 
 void Task1(void *parameters)
 {
   while (true)
   {
     customLoRa.read_Lora();
-    if (checkData = false)
-    {
-      // xTaskCreatePinnedToCore(pubData, "pubData", 4096, NULL, 4, &handler_Publish, 1);
-      checkData = true;
-      // vTaskResume(handler_Publish);
-    }
+    DynamicJsonDocument jsonDoc(128);
+    jsonDoc["deviceId"] = chipId;
+    jsonDoc["temperature"] = temp;
+    jsonDoc["humidity"] = humi;
+    jsonDoc["light"] = light;
+    jsonDoc["soil"] = soil;
+    jsonDoc["Rssi"] = Rssi;
+    jsonDoc["Pin"] = pin;
+    Serial.println();
+    String jsonString;
+    serializeJson(jsonDoc, jsonString);
+    client.publish("sensor", jsonString.c_str());
+    Serial.println(jsonString);
   }
 }
+int idRelay;
+int stateRelay;
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -76,6 +62,7 @@ void callback(char *topic, byte *payload, unsigned int length)
       Serial.print((char)payload[i]);
     }
     Serial.println();
+    // gửi cả payload cho relay
     if ((char)payload[0] == '1')
     {
       Serial.println("on");
@@ -132,9 +119,7 @@ void setup()
   customLoRa.setup_Lora();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-  xTaskCreatePinnedToCore(Task1, "task1", 4096, NULL, 1, &handler_readLora, 1);
-  xTaskCreatePinnedToCore(pubData, "pubData", 4096, NULL, 1, &handler_Publish, 1);
-  vTaskStartScheduler();
+  xTaskCreatePinnedToCore(Task1, "task1", 20000, NULL, 1, &handler_readLora, 1);
 }
 void loop()
 {
@@ -143,5 +128,4 @@ void loop()
     reconnect();
   }
   client.loop();
-  // vTaskDelete(NULL);
 }
