@@ -1,7 +1,7 @@
 #include <WifiConfig.h>
 
-const char *WifiConfig::mqtt_server = "192.168.1.19";
-
+const char *mqtt_server = "192.168.137.1";
+bool checkSmartConfig = false;
 WifiConfig::WifiConfig()
 {
 }
@@ -9,7 +9,7 @@ WifiConfig::WifiConfig()
 WifiConfig::~WifiConfig()
 {
 }
-
+bool checkDone = false;
 void WifiConfig::smartConfig()
 {
     WiFi.disconnect();
@@ -20,12 +20,13 @@ void WifiConfig::smartConfig()
     {
         delay(500);
         Serial.print(".");
+        checkDone = false;
     }
-    WiFi.stopSmartConfig();
+    // WiFi.stopSmartConfig();
     Serial.println("Smartconfig Done!");
     Serial.print("SSID: ");
-    ssid  = WiFi.SSID();
-    pass  = WiFi.psk();
+    ssid = WiFi.SSID();
+    pass = WiFi.psk();
     Serial.println(ssid);
     Serial.print("Pass: ");
     Serial.println(pass);
@@ -34,10 +35,15 @@ void WifiConfig::smartConfig()
     cEEPROM.write(ssid, 0, 19);
     cEEPROM.write(pass, 20, 39);
     device.ReadyLedOn();
-    smConfigMode = true;
+    checkDone = true;
+    ConnectWifi(ssid, pass);
+    // client.connect(mqtt_server);
+    checkSmartConfig = false;
+    
 }
 
-void WifiConfig::ConnectWifi(String ssid, String pass){
+void WifiConfig::ConnectWifi(String ssid, String pass)
+{
     WiFi.stopSmartConfig();
     WiFi.disconnect();
     WiFi.reconnect();
@@ -46,7 +52,7 @@ void WifiConfig::ConnectWifi(String ssid, String pass){
     Serial.print("Pass: ");
     Serial.println(pass);
     delay(5);
-    WiFi.begin(ssid,pass);
+    WiFi.begin(ssid, pass);
     Serial.print("Connecting ...");
     while (WiFi.status() != WL_CONNECTED)
     {
@@ -57,27 +63,21 @@ void WifiConfig::ConnectWifi(String ssid, String pass){
     Serial.println("");
     Serial.println("WiFi Connection success!");
     Serial.print("IP address: ");
-    Serial.println(WiFi.localIP()); 
+    Serial.println(WiFi.localIP());
 }
 
 void WifiConfig::setupWifi()
 {
     String ssid = cEEPROM.getWiFissid();
     String pass = cEEPROM.getWiFipassword();
-    ConnectWifi(ssid,pass);
+    ConnectWifi(ssid, pass);
 }
 void WifiConfig::configWifi()
 {
-    if (device.pressSetupButton2())
-    {
-        smartConfig();
-        Serial.println("Vao che do ConfigWifi !");
-        device.ReadyLedToogle();
-    }    
-}
-bool WifiConfig::getSmConfigMode()
-{
-    return smConfigMode;
+    deviceService.ReadyLedToogle();
+    Serial.println("Vao che do Smart ConfigWifi !");
+    checkSmartConfig = true;
+    // smartConfig();
 }
 
 WifiConfig wifiConfig;

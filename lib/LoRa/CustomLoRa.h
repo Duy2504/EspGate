@@ -17,12 +17,15 @@ private:
     static const int PIN_LORA_DIO0     = 4;
     static const int LORA_FREQUENCY    = 433E6;
 
+
 public:
     void setup_Lora();
     void tach_String(String data);
     void read_Lora();
+    void sendMessage(String message);
     bool checkId(String data, String targetID);
 };
+extern      int customIdMaster;
 extern      bool checkData;
 extern      int chipId;
 extern      float temp, humi, light, soil, pin, Rssi;

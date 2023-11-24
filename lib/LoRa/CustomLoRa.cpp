@@ -83,10 +83,10 @@ void CustomLoRa::read_Lora()
     {
       data += (char)LoRa.read();
     }
-    // Serial.print("Data Receive: ");
-    // Serial.print(data);
-    // Serial.print(" with: ");
-    // Serial.println(LoRa.packetRssi());
+    Serial.print("Data Receive: ");
+    Serial.print(data);
+    Serial.print(" with: ");
+    Serial.println(LoRa.packetRssi());
     Rssi = LoRa.packetRssi();
     // Tách dữ liệu chỉ khi ID là 4402492
     if (checkId(data, "4402492"))
@@ -102,6 +102,14 @@ void CustomLoRa::read_Lora()
     // tach_String(data);
     // xTaskCreatePinnedToCore(publishData, "publishData", 2048, NULL, 4, &handler_Publish, 1);
   }
+}
+int customIdMaster = 6;
+void CustomLoRa::sendMessage(String message){
+  // Serial.print("Send control: ");
+  // Serial.println(message);
+  LoRa.beginPacket();
+  LoRa.println(message);
+  LoRa.endPacket();
 }
 
 CustomLoRa customLoRa;

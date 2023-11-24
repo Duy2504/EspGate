@@ -13,7 +13,6 @@ private:
     bool smConfigMode = false;
     String ssid ;
     String pass ;
-    static const char *mqtt_server;
     WiFiClient espClient;
     PubSubClient client;
     DeviceService device;
@@ -25,12 +24,10 @@ public:
     void ConnectWifi(String ssid, String pass);
     void setupWifi();
     void configWifi();
-    bool getSmConfigMode();
-    void reconnect();
-
 };
-
-
+extern bool checkDone;
+extern const char *mqtt_server;
+extern bool checkSmartConfig;
 extern WifiConfig wifiConfig;
 
 #endif /* _CONFIG_WIFI_H_ */

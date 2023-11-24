@@ -13,20 +13,20 @@
 #include <CustomEEPROM.h>
 #include <WifiConfig.h>
 #include <CustomLoRa.h>
-const char *mqtt_server = "192.168.1.19";
+// const char *mqtt_server = "192.168.137.1";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 //========== Handler =================//
-xTaskHandle handler_Publish;
-xTaskHandle handler_Sub;
+xTaskHandle handler_MQTT;
 xTaskHandle handler_readLora;
+xTaskHandle handler_smartConfig;
+QueueHandle_t messageControl = xQueueCreate(27, sizeof(String));
 //========== TOPIC Control ==========//
 #define sub1 "light_state"
 #define sub2 "pump_state"
 #define sub3 "rem_state"
-
 
 void MQTT(void *parameters)
 {
@@ -48,7 +48,6 @@ void MQTT(void *parameters)
       else
       {
         Serial.println(" try again in 2 seconds");
-        Serial.println(mqtt_server);
         delay(2000);
       }
     }
@@ -71,6 +70,7 @@ void Pub()
   client.publish("sensor", jsonString.c_str());
   // Serial.println(jsonString);
 }
+
 void callback(char *topic, byte *payload, unsigned int length)
 {
   String subData = "";
@@ -101,7 +101,11 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     Serial.println(subData);
   }
+  String m = "Id: " + String(customIdMaster) + ", Topic: " + String(topic) + ", Message: " + String(subData);
+  Serial.println("m: " + m);
+  xQueueSend(messageControl, &m, portMAX_DELAY);
 }
+
 void Task1(void *parameters)
 {
   while (true)
@@ -114,24 +118,40 @@ void Task1(void *parameters)
     }
   }
 }
-// void Sub(void *parameters){
-// while (true)
-// {
-//   callback();
-// }
-
-// }
-
+void smartWifi(void *parameters)
+{
+  if (checkSmartConfig)
+  {
+    wifiConfig.smartConfig();
+  }
+  if (checkDone)
+  {
+    vTaskDelete(handler_smartConfig);
+  }
+}
+void checkButton(void *parameters)
+{
+  while (true)
+  {
+    if (deviceService.longPress())
+    {
+      xTaskCreatePinnedToCore(smartWifi, "smartWifi", 20000, NULL, 4, &handler_smartConfig, ARDUINO_RUNNING_CORE);
+    }
+  }
+}
 void setup()
 {
   Serial.begin(115200);
-  DeviceService::config();
+  deviceService.setup();
   wifiConfig.setupWifi();
   customLoRa.setup_Lora();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-  xTaskCreatePinnedToCore(MQTT, "MQTT", 20000, NULL, 2, NULL, 1);
-  xTaskCreatePinnedToCore(Task1, "task1", 20000, NULL, 2, &handler_readLora, 1);
+  xTaskCreatePinnedToCore(MQTT, "MQTT", 20000, NULL, 2, &handler_MQTT, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(checkButton, "checkButton", 20000, NULL, 2, NULL, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(Task1, "task1", 20000, NULL, 2, &handler_readLora, ARDUINO_RUNNING_CORE);
+
+  vTaskStartScheduler();
 }
 void loop()
 {
