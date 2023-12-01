@@ -20,7 +20,7 @@ PubSubClient client(espClient);
 
 //========== Handler =================//
 xTaskHandle handler_MQTT;
-xTaskHandle handler_readLora;
+xTaskHandle handler_readSensor;
 xTaskHandle handler_smartConfig;
 QueueHandle_t messageControl = xQueueCreate(27, sizeof(String));
 //========== TOPIC Control ==========//
@@ -101,13 +101,33 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     Serial.println(subData);
   }
-  String m = "Id: " + String(customIdMaster) + ", Topic: " + String(topic) + ", Message: " + String(subData);
-  Serial.println("m: " + m);
+  String m = "ID: " + String(customIdMaster) + ", Topic: " + String(topic) + ", Message: " + String(subData);
   xQueueSend(messageControl, &m, portMAX_DELAY);
+  
+}
+void sendRelay(void *parmaeters)
+{
+  TickType_t xLastWakeTime;
+  const TickType_t xFrequency = pdMS_TO_TICKS(1000);
+  xLastWakeTime = xTaskGetTickCount();
+  String Relay;
+  while (true)
+  {
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    if (xQueueReceive(messageControl, &Relay, portMAX_DELAY) == pdTRUE)
+    {
+      customLoRa.sendMessage(Relay);
+      // delay(1000);
+    }
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+  }
 }
 
-void Task1(void *parameters)
+void readSensor(void *parameters)
 {
+  TickType_t xLastWakeTime;
+  const TickType_t xFrequency = pdMS_TO_TICKS(500);
+  xLastWakeTime = xTaskGetTickCount();
   while (true)
   {
     customLoRa.read_Lora();
@@ -116,6 +136,7 @@ void Task1(void *parameters)
       Pub();
       checkData = false;
     }
+    // vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 void smartWifi(void *parameters)
@@ -148,8 +169,9 @@ void setup()
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
   xTaskCreatePinnedToCore(MQTT, "MQTT", 20000, NULL, 2, &handler_MQTT, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(checkButton, "checkButton", 20000, NULL, 2, NULL, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(Task1, "task1", 20000, NULL, 2, &handler_readLora, ARDUINO_RUNNING_CORE);
+  // xTaskCreatePinnedToCore(checkButton, "checkButton", 20000, NULL, 2, NULL, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(sendRelay, "sendRelay", 20000, NULL, 2, NULL, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(readSensor, "readSensor", 20000, NULL, 2, &handler_readSensor, ARDUINO_RUNNING_CORE);
 
   vTaskStartScheduler();
 }

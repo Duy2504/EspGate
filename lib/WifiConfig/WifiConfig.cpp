@@ -1,6 +1,6 @@
 #include <WifiConfig.h>
 
-const char *mqtt_server = "192.168.137.1";
+const char *mqtt_server = "192.168.1.24";
 bool checkSmartConfig = false;
 WifiConfig::WifiConfig()
 {
