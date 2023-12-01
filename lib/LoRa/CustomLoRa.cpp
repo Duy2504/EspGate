@@ -2,23 +2,36 @@
 
 void CustomLoRa::setup_Lora()
 {
-  Serial.println("LoRa begin: ");
+  SPI.begin(PIN_LORA_SCK, PIN_LORA_MISO, PIN_LORA_MOSI);
   LoRa.setPins(PIN_LORA_CS, PIN_LORA_RST, PIN_LORA_DIO0);
-  LoRa.setSPIFrequency(20000000);
-  if (!LoRa.begin(LORA_FREQUENCY))
+  while (!LoRa.begin(LORA_FREQUENCY))
   {
-    Serial.println("Starting LoRa faile!");
-    while (1)
-    {
-      ;
-    }
+    Serial.println("Starting LoRa failed!");
+    delay(1000);
   }
-  else
-  {
-    Serial.print("LoRa init with frequency ");
-    Serial.println(LORA_FREQUENCY);
-  }
+  LoRa.setSpreadingFactor(LORA_SF);
+  LoRa.setCodingRate4(LORA_CR);
+  LoRa.setSignalBandwidth(LORA_BW);
+  LoRa.setPreambleLength(LORA_PREAMBLE_LENGTH);
+  LoRa.enableCrc();
+  Serial.println("LoRa started OK!");
+  //  LoRa.setSPIFrequency (20000000);
+  //  LoRa.setTxPower (18);
+  // put the radio into receive mode
+  LoRa.receive();
 }
+
+void CustomLoRa::lora_rxMode()
+{
+  LoRa.enableInvertIQ();
+  LoRa.receive();
+}
+void CustomLoRa::lora_txMode()
+{
+  LoRa.idle();
+  LoRa.disableInvertIQ();
+}
+
 bool checkData;
 int chipId;
 float temp, humi, light, soil, pin, Rssi;
@@ -43,7 +56,7 @@ void CustomLoRa::tach_String(String data)
   humi = humiS.toFloat();
   light = lightS.toFloat();
   pin = pinS.toFloat();
-  
+
   // Serial.print("Id: ");
   // Serial.println(chipId);
   // Serial.print("Nhiệt độ: ");
@@ -98,18 +111,21 @@ void CustomLoRa::read_Lora()
     {
       checkData = false;
     }
-    
+
     // tach_String(data);
     // xTaskCreatePinnedToCore(publishData, "publishData", 2048, NULL, 4, &handler_Publish, 1);
   }
 }
 int customIdMaster = 6;
-void CustomLoRa::sendMessage(String message){
-  // Serial.print("Send control: ");
-  // Serial.println(message);
+void CustomLoRa::sendMessage(String message)
+{
+  // lora_txMode();
+  Serial.print("Send control: ");
   LoRa.beginPacket();
-  LoRa.println(message);
-  LoRa.endPacket();
+  LoRa.print(message);
+  Serial.println(message);
+  LoRa.endPacket(true);
+  // lora_rxMode();
 }
 
 CustomLoRa customLoRa;
