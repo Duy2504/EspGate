@@ -103,7 +103,6 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
   String m = "ID: " + String(customIdMaster) + ", Topic: " + String(topic) + ", Message: " + String(subData);
   xQueueSend(messageControl, &m, portMAX_DELAY);
-  
 }
 void sendRelay(void *parmaeters)
 {
@@ -113,7 +112,6 @@ void sendRelay(void *parmaeters)
   String Relay;
   while (true)
   {
-    vTaskDelay(pdMS_TO_TICKS(2000));
     if (xQueueReceive(messageControl, &Relay, portMAX_DELAY) == pdTRUE)
     {
       customLoRa.sendMessage(Relay);
