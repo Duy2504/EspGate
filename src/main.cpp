@@ -102,11 +102,16 @@ void callback(char *topic, byte *payload, unsigned int length)
     Serial.println(subData);
   }
   String m = "ID: " + String(customIdMaster) + ", Topic: " + String(topic) + ", Message: " + String(subData);
+<<<<<<< HEAD
+=======
+  Serial.println("m: " + m);
+>>>>>>> 5f61097c6aca1231359f9bda46f379fcf07434b5
   xQueueSend(messageControl, &m, portMAX_DELAY);
 }
 void sendRelay(void *parmaeters)
 {
   TickType_t xLastWakeTime;
+<<<<<<< HEAD
   const TickType_t xFrequency = pdMS_TO_TICKS(1000);
   xLastWakeTime = xTaskGetTickCount();
   String Relay;
@@ -117,6 +122,23 @@ void sendRelay(void *parmaeters)
       customLoRa.sendMessage(Relay);
       // delay(1000);
     }
+=======
+  const TickType_t xFrequency = pdMS_TO_TICKS(1000); // Chu kỳ 1000ms (1 giây)
+  // Khởi tạo xLastWakeTime vào thời điểm hiện tại
+  xLastWakeTime = xTaskGetTickCount();
+  String relay;
+  while (true)
+  {
+    if (xQueueReceive(messageControl, &relay, portMAX_DELAY) == pdTRUE)
+    {
+      customLoRa.sendMessage(relay);
+    }
+    else
+    {
+      Serial.println("Không có lệnh khiển!");
+    }
+    
+>>>>>>> 5f61097c6aca1231359f9bda46f379fcf07434b5
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
@@ -124,7 +146,12 @@ void sendRelay(void *parmaeters)
 void readSensor(void *parameters)
 {
   TickType_t xLastWakeTime;
+<<<<<<< HEAD
   const TickType_t xFrequency = pdMS_TO_TICKS(500);
+=======
+  const TickType_t xFrequency = pdMS_TO_TICKS(500); // Chu kỳ 1000ms (1 giây)
+  // Khởi tạo xLastWakeTime vào thời điểm hiện tại
+>>>>>>> 5f61097c6aca1231359f9bda46f379fcf07434b5
   xLastWakeTime = xTaskGetTickCount();
   while (true)
   {
@@ -134,7 +161,16 @@ void readSensor(void *parameters)
       Pub();
       checkData = false;
     }
+<<<<<<< HEAD
     // vTaskDelayUntil(&xLastWakeTime, xFrequency);
+=======
+    else
+    {
+      Serial.println("Không có dữ liệu gửi đến!");
+    }
+    
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+>>>>>>> 5f61097c6aca1231359f9bda46f379fcf07434b5
   }
 }
 void smartWifi(void *parameters)
