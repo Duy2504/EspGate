@@ -123,10 +123,7 @@ int customIdMaster = 6;
 void CustomLoRa::sendMessage(String message)
 {
   // lora_txMode();
-<<<<<<< HEAD
   delay(500);
-=======
->>>>>>> 5f61097c6aca1231359f9bda46f379fcf07434b5
   Serial.print("Send control: ");
   LoRa.beginPacket();
   LoRa.print(message);
