@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "Ticker.h"
-
 #ifndef _DEVICESERVICE_H_
 #define _DEVICESERVICE_H_
 class DeviceService
@@ -9,9 +8,6 @@ class DeviceService
 private:
     static const int readyLed = 2;
     static const int buttonWifi = 13;
-    int timePress = 0;
-    int countPressAction = 0;
-    
 public:
     static void setup();
     static void ReadyLedOn();

@@ -103,6 +103,7 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
   String m = "ID: " + String(customIdMaster) + ", Topic: " + String(topic) + ", Message: " + String(subData);
   xQueueSend(messageControl, &m, portMAX_DELAY);
+  delay(500);
 }
 void sendRelay(void *parmaeters)
 {
@@ -134,30 +135,24 @@ void readSensor(void *parameters)
       Pub();
       checkData = false;
     }
-    // vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 void smartWifi(void *parameters)
 {
-  if (checkSmartConfig)
-  {
-    wifiConfig.smartConfig();
-  }
-  if (checkDone)
-  {
-    vTaskDelete(handler_smartConfig);
-  }
-}
-void checkButton(void *parameters)
-{
+  TickType_t xLastWakeTime;
+  const TickType_t xFrequency = pdMS_TO_TICKS(1000);
+  xLastWakeTime = xTaskGetTickCount();
   while (true)
   {
     if (deviceService.longPress())
     {
-      xTaskCreatePinnedToCore(smartWifi, "smartWifi", 20000, NULL, 4, &handler_smartConfig, ARDUINO_RUNNING_CORE);
+      wifiConfig.smartConfig();
     }
   }
+  vTaskDelayUntil(&xLastWakeTime, xFrequency);
 }
+
 void setup()
 {
   Serial.begin(115200);
@@ -167,9 +162,9 @@ void setup()
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
   xTaskCreatePinnedToCore(MQTT, "MQTT", 20000, NULL, 2, &handler_MQTT, ARDUINO_RUNNING_CORE);
-  // xTaskCreatePinnedToCore(checkButton, "checkButton", 20000, NULL, 2, NULL, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(sendRelay, "sendRelay", 20000, NULL, 2, NULL, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(readSensor, "readSensor", 20000, NULL, 2, &handler_readSensor, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(sendRelay, "sendRelay", 20000, NULL, 4, NULL, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(readSensor, "readSensor", 20000, NULL, 3, &handler_readSensor, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(smartWifi, "smartWifi", 20000, NULL, 2, NULL, ARDUINO_RUNNING_CORE);
 
   vTaskStartScheduler();
 }

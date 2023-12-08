@@ -1,6 +1,6 @@
 #include <WifiConfig.h>
 
-const char *mqtt_server = "192.168.1.24";
+const char *mqtt_server = "192.168.1.23";
 bool checkSmartConfig = false;
 WifiConfig::WifiConfig()
 {
@@ -12,17 +12,17 @@ WifiConfig::~WifiConfig()
 bool checkDone = false;
 void WifiConfig::smartConfig()
 {
+    device.ReadyLedToogle();
     WiFi.disconnect();
     WiFi.mode(WIFI_AP_STA);
     WiFi.beginSmartConfig();
-    Serial.println("Waiting for smartConfig!");
+    Serial.println("SmartConfig WiFi begin");
     while (!WiFi.smartConfigDone())
     {
         delay(500);
         Serial.print(".");
-        checkDone = false;
     }
-    // WiFi.stopSmartConfig();
+    WiFi.stopSmartConfig();
     Serial.println("Smartconfig Done!");
     Serial.print("SSID: ");
     ssid = WiFi.SSID();
@@ -35,11 +35,12 @@ void WifiConfig::smartConfig()
     cEEPROM.write(ssid, 0, 19);
     cEEPROM.write(pass, 20, 39);
     device.ReadyLedOn();
-    checkDone = true;
+    if (WiFi.smartConfigDone())
+    {
+        checkDone = false;
+    }
     ConnectWifi(ssid, pass);
     // client.connect(mqtt_server);
-    checkSmartConfig = false;
-    
 }
 
 void WifiConfig::ConnectWifi(String ssid, String pass)
@@ -71,13 +72,6 @@ void WifiConfig::setupWifi()
     String ssid = cEEPROM.getWiFissid();
     String pass = cEEPROM.getWiFipassword();
     ConnectWifi(ssid, pass);
-}
-void WifiConfig::configWifi()
-{
-    deviceService.ReadyLedToogle();
-    Serial.println("Vao che do Smart ConfigWifi !");
-    checkSmartConfig = true;
-    // smartConfig();
 }
 
 WifiConfig wifiConfig;
