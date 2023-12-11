@@ -27,6 +27,9 @@ public:
 };
 extern bool checkDone;
 extern const char *mqtt_server;
+extern const char* mqtt_username; 
+extern const char* mqtt_password; 
+extern const int mqtt_port;
 extern bool checkSmartConfig;
 extern WifiConfig wifiConfig;
 

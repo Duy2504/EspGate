@@ -28,7 +28,7 @@ QueueHandle_t messageControl = xQueueCreate(27, sizeof(String));
 #define sub2 "pump_state"
 #define sub3 "rem_state"
 
-void MQTT(void *parameters)
+void MQTT(void *params)
 {
   while (true)
   {
@@ -44,6 +44,7 @@ void MQTT(void *parameters)
         client.subscribe(sub1);
         client.subscribe(sub2);
         client.subscribe(sub3);
+
       }
       else
       {
@@ -105,7 +106,7 @@ void callback(char *topic, byte *payload, unsigned int length)
   xQueueSend(messageControl, &m, portMAX_DELAY);
   delay(500);
 }
-void sendRelay(void *parmaeters)
+void sendRelay(void *params)
 {
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(1000);
@@ -118,30 +119,35 @@ void sendRelay(void *parmaeters)
       customLoRa.sendMessage(Relay);
       // delay(1000);
     }
+    else
+    {
+      Serial.println("Không có lệnh khiển!");
+    }
+    
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 
-void readSensor(void *parameters)
+void readSensor(void *params)
 {
   TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(500);
+  const TickType_t xFrequency = pdMS_TO_TICKS(5000);
   xLastWakeTime = xTaskGetTickCount();
   while (true)
   {
-    customLoRa.read_Lora();
+      customLoRa.read_Lora();
     if (checkData)
     {
       Pub();
       checkData = false;
     }
-    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    // vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
-void smartWifi(void *parameters)
+void smartWifi(void *params)
 {
   TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(1000);
+  const TickType_t xFrequency = pdMS_TO_TICKS(3000);
   xLastWakeTime = xTaskGetTickCount();
   while (true)
   {
@@ -161,13 +167,14 @@ void setup()
   customLoRa.setup_Lora();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-  xTaskCreatePinnedToCore(MQTT, "MQTT", 20000, NULL, 2, &handler_MQTT, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(sendRelay, "sendRelay", 20000, NULL, 4, NULL, ARDUINO_RUNNING_CORE);
+
+  xTaskCreatePinnedToCore(MQTT, "MQTT", 20000, NULL, 3, &handler_MQTT, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(sendRelay, "sendRelay", 20000, NULL, 3, NULL, ARDUINO_RUNNING_CORE);
   xTaskCreatePinnedToCore(readSensor, "readSensor", 20000, NULL, 3, &handler_readSensor, ARDUINO_RUNNING_CORE);
   xTaskCreatePinnedToCore(smartWifi, "smartWifi", 20000, NULL, 2, NULL, ARDUINO_RUNNING_CORE);
-
   vTaskStartScheduler();
 }
 void loop()
 {
+  
 }

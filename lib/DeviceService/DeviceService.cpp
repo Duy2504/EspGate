@@ -58,11 +58,13 @@ bool DeviceService::longPress()
       lastState = currentState;
       return true;
     }
-    // Serial.println("A long press is detected");
+    else
+    {
+      // save the the last state
+      lastState = currentState;
+      return false;
+    }
   }
-  // save the the last state
-  lastState = currentState;
-  return false;
 }
 
 DeviceService deviceService;
